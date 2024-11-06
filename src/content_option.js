@@ -7,7 +7,7 @@ const meta = {
 const introdata = {
     title: "I’m Shilpagya Shrivas",
     animated: {
-        first: "I love cyber security",
+        first: "I love cyber security..",
         second: "I deploy cool websites",
         third: "We Hack into networks",
     },
