@@ -17,8 +17,8 @@ fi
 
 # Stop any existing instances to avoid duplicates
 echo "Stopping any existing PM2 instances..."
-pm2 stop shilpagya|| true
-pm2 delete shilpagya || true
+pm2 stop "shilpagya"|| true
+pm2 delete "shilpagya" || true
 
 # Install project dependencies
 echo "Installing project dependencies..."
