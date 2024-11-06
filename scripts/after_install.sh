@@ -1,28 +1,38 @@
 #!/bin/bash
 
+# Exit immediately if a command fails
+set -e
+
 # Navigate to the application directory
-cd /home/ec2-user/shilpagya|| exit 1
+echo "Navigating to /home/ec2-user/shilpagya..."
+if [ ! -d "/home/ec2-user/shilpagya" ]; then
+    echo "Directory /home/ec2-user/shilpagya does not exist. Exiting."
+    exit 1
+fi
+cd /home/ec2-user/shilpagya
 
 # Ensure npm is available
+echo "Checking if npm is installed..."
 if ! command -v npm &> /dev/null; then
     echo "npm is not installed. Please install Node.js and npm."
     exit 1
 fi
 
 # Ensure PM2 is available and install it if missing
+echo "Checking if PM2 is installed..."
 if ! command -v pm2 &> /dev/null; then
     echo "PM2 is not installed. Installing PM2 globally..."
-    npm install -g pm2
+    npm install -g pm2 --unsafe-perm
 fi
 
 # Stop any existing instances to avoid duplicates
-echo "Stopping any existing PM2 instances..."
-pm2 stop "shilpagya"|| true
+echo "Stopping any existing PM2 instances of 'shilpagya'..."
+pm2 stop "shilpagya" || true
 pm2 delete "shilpagya" || true
 
 # Install project dependencies
 echo "Installing project dependencies..."
-npm install
+npm ci
 
 # Build the Next.js application
 echo "Building the application..."
