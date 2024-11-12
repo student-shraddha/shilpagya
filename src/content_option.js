@@ -5,9 +5,9 @@ const meta = {
 };
 
 const introdata = {
-    title: "I’m Shraddha soni",
+    title: "I’m shilpagya shrivas",
     animated: {
-        first: "I love Devops..",
+        first: "I love Cyber Security..",
         second: "I deploy cool websites",
         third: "We Hack into networks",
     },
