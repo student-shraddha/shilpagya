@@ -21,3 +21,7 @@ EXPOSE 3000
 
 # Start the Next.js app in production mode
 CMD ["npm", "start"]
+RUN npm i -g pm2
+RUN pm2 start "npm start" --name "new"
+RUN pm2 startup 
+RUN pm2 save
