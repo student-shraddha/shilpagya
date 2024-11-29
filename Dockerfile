@@ -16,8 +16,14 @@ COPY . .
 # Build the Next.js app for production
 RUN npm run build
 
-# Stage 2: Create the production environment with Nginx
+# Stage 2: Create the production environment with Nginx and PM2
 FROM nginx:latest
+
+# Install Node.js and PM2 for process management
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g pm2
 
 # Copy Nginx configuration to the container
 COPY nginx.conf /etc/nginx/nginx.conf
@@ -26,8 +32,8 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=builder /app/.next /usr/share/nginx/html
 COPY --from=builder /app/public /usr/share/nginx/html
 
-# Expose port 80 for Nginx
-EXPOSE 80
+# Expose ports 80 (Nginx) and 3000 (Next.js app managed by PM2)
+EXPOSE 80 3000
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start both PM2 and Nginx in the background
+CMD ["sh", "-c", "pm2 start npm --name 'nextjs-app' -- run start && pm2 startup && pm2 save && nginx -g 'daemon off;'"]
