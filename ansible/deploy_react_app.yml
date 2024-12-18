@@ -1,0 +1,101 @@
+---
+- name: Deploy  shilpagya Application
+  hosts: webserver1  # Changed from 'webserver' to 'webserver1'
+  become: true
+
+  vars:
+    node_app_name: shilpagya
+    node_repo_url: https://github.com/student-shraddha/shilpagya.git
+    node_project_dir: /var/www/shilpagya
+    node_start_command: "npm run start"
+    node_port: 3000
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install dependencies
+      apt:
+        name:
+          - git
+          - curl
+          - nginx
+        state: present
+
+    - name: Install Node.js and npm
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+        apt-get install -y nodejs
+      args:
+        chdir: /
+
+    - name: Install PM2 globally using npm
+      npm:
+        name: pm2
+        global: yes
+
+    - name: Clone Next.js project from Git repository
+      git:
+        repo: "{{ node_repo_url }}"
+        dest: "{{ node_project_dir }}"
+        version: main  # Use 'main' if that's the default branch in the repo
+
+    - name: Install Node.js dependencies
+      command: npm install
+      args:
+        chdir: "{{ node_project_dir }}"
+
+    - name: Build the Next.js application
+      command: npm run build
+      args:
+        chdir: "{{ node_project_dir }}"
+
+    - name: Start Next.js application with PM2
+      command: pm2 start npm --name "{{ node_app_name }}" -- start
+      args:
+        chdir: "{{ node_project_dir }}"
+
+    - name: Generate PM2 startup script for automatic app restart after reboot
+      command: pm2 startup systemd -u {{ ansible_user }} --hp /home/{{ ansible_user }}
+    
+    - name: Save PM2 process list to restart on reboot
+      command: pm2 save
+
+    - name: Ensure PM2 service is started and enabled
+      systemd:
+        name: pm2-{{ ansible_user }}
+        state: started
+        enabled: yes
+
+    - name: Restart Nginx to apply changes
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Ensure Nginx is configured to reverse proxy to Next.js application
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          server {
+              listen 80;
+              server_name localhost;
+
+              location / {
+                  proxy_pass http://localhost:3000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_cache_bypass $http_upgrade;
+              }
+          }
+      notify:
+        - Reload Nginx
+
+  handlers:
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded
